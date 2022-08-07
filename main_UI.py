@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*- 
 
-import dlib                     # 人脸识别的库dlib
-import numpy as np              # 数据处理的库numpy
-import cv2                      # 图像处理的库OpenCv
-import wx                       # 构造显示界面的GUI
+import dlib
+import numpy as np
+import cv2
+import wx
 import wx.xrc
 import wx.adv
-# import the necessary packages
+
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
 from imutils import face_utils
-import numpy as np # 数据处理的库 numpy
+import numpy as np
 import argparse
 import imutils
 import datetime,time
@@ -124,13 +124,13 @@ class Fatigue_detecting(wx.Frame):
         
         # 封面图片
         self.image_cover = wx.Image(COVER, wx.BITMAP_TYPE_ANY)
-        # 显示图片在m_animCtrl1上
+
         self.bmp = wx.StaticBitmap(self.m_animCtrl1, -1, wx.Bitmap(self.image_cover))
 
         # 设置窗口标题的图标
         self.icon = wx.Icon('./images/123.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)
-        # 系统事件
+
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         print("Initial loading complete!")
@@ -139,30 +139,30 @@ class Fatigue_detecting(wx.Frame):
         # 默认为摄像头0
         self.VIDEO_STREAM = 0
         self.CAMERA_STYLE = False # False未打开摄像头，True摄像头已打开
-        # 闪烁阈值（秒）
+
         self.AR_CONSEC_FRAMES_check = 3
         self.OUT_AR_CONSEC_FRAMES_check = 5
-        # 眼睛长宽比
+
         self.EYE_AR_THRESH = 0.2
         self.EYE_AR_CONSEC_FRAMES = self.AR_CONSEC_FRAMES_check
-        # 打哈欠长宽比
+
         self.MAR_THRESH = 0.5
         self.MOUTH_AR_CONSEC_FRAMES = self.AR_CONSEC_FRAMES_check
-        # 瞌睡点头
+
         self.HAR_THRESH = 0.3
         self.NOD_AR_CONSEC_FRAMES = self.AR_CONSEC_FRAMES_check
         
         """计数"""
-        # 初始化帧计数器和眨眼总数
+
         self.COUNTER = 0
         self.TOTAL = 0
-        # 初始化帧计数器和打哈欠总数
+
         self.mCOUNTER = 0
         self.mTOTAL = 0
-        # 初始化帧计数器和点头总数
+
         self.hCOUNTER = 0
         self.hTOTAL = 0
-        # 离职时间长度
+
         self.oCOUNTER = 0
 
         """姿态"""
@@ -212,9 +212,7 @@ class Fatigue_detecting(wx.Frame):
         pass
 
     def get_head_pose(self,shape):# 头部姿态估计
-        # （像素坐标集合）填写2D参考点，注释遵循https://ibug.doc.ic.ac.uk/resources/300-W/
-        # 17左眉左上角/21左眉右角/22右眉左上角/26右眉右上角/36左眼左上角/39左眼右上角/42右眼左上角/
-        # 45右眼右上角/31鼻子左上角/35鼻子右上角/48左上角/54嘴右上角/57嘴中央下角/8下巴角
+
         image_pts = np.float32([shape[17], shape[21], shape[22], shape[26], shape[36],
                                 shape[39], shape[42], shape[45], shape[31], shape[35],
                                 shape[48], shape[54], shape[57], shape[8]])
@@ -243,14 +241,14 @@ class Fatigue_detecting(wx.Frame):
     
     def eye_aspect_ratio(self,eye):
         # 垂直眼标志（X，Y）坐标
-        A = dist.euclidean(eye[1], eye[5])# 计算两个集合之间的欧式距离
+        A = dist.euclidean(eye[1], eye[5])
         B = dist.euclidean(eye[2], eye[4])
         # 计算水平之间的欧几里得距离
-        # 水平眼标志（X，Y）坐标
+
         C = dist.euclidean(eye[0], eye[3])
         # 眼睛长宽比的计算
         ear = (A + B) / (2.0 * C)
-        # 返回眼睛的长宽比
+
         return ear
 
     def mouth_aspect_ratio(self,mouth):# 嘴部
@@ -262,8 +260,7 @@ class Fatigue_detecting(wx.Frame):
 
 
     def _learning_face(self,event):
-        """dlib的初始化调用"""
-        # 使用人脸检测器get_frontal_face_detector
+
         self.detector = dlib.get_frontal_face_detector()
         # dlib的68点模型，使用作者训练好的特征预测器
         #self.predictor = dlib.shape_predictor("model/shape_predictor_68_face_landmarks.dat")
@@ -274,7 +271,7 @@ class Fatigue_detecting(wx.Frame):
         (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
         (mStart, mEnd) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
         
-        #建cv2摄像头对象，这里使用电脑自带摄像头，如果接了外部摄像头，则自动切换到外部摄像头
+
         self.cap = cv2.VideoCapture(self.VIDEO_STREAM)
         
         if self.cap.isOpened()==True:#  返回true/false 检查初始化是否成功
@@ -291,12 +288,12 @@ class Fatigue_detecting(wx.Frame):
             #    一个布尔值true/false，用来判断读取视频是否成功/是否到视频末尾
             #    图像对象，图像的三维矩阵
             flag, im_rd = self.cap.read()
-            # 取灰度
+
             img_gray = cv2.cvtColor(im_rd, cv2.COLOR_RGB2GRAY)
             
             # 使用人脸检测器检测每一帧图像中的人脸。并返回人脸数faces
             faces = self.detector(img_gray, 0)
-            # 如果检测到人脸
+
             if(len(faces)!=0):
                 # enumerate方法同时返回数据对象的索引和数据，k为索引，d为faces中的对象
                 for k, d in enumerate(faces):
@@ -313,14 +310,14 @@ class Fatigue_detecting(wx.Frame):
                     打哈欠
                     """
                     if self.yawn_checkBox1.GetValue()== True:
-                        # 嘴巴坐标
+
                         mouth = shape[mStart:mEnd]        
-                        # 打哈欠
+
                         mar = self.mouth_aspect_ratio(mouth)
                         # 使用cv2.convexHull获得凸包位置，使用drawContours画出轮廓位置进行画图操作
                         mouthHull = cv2.convexHull(mouth)
                         cv2.drawContours(im_rd, [mouthHull], -1, (0, 255, 0), 1)
-                        # 同理，判断是否打哈欠    
+
                         if mar > self.MAR_THRESH:# 张嘴阈值0.5
                             self.mCOUNTER += 1
                         else:
@@ -330,7 +327,7 @@ class Fatigue_detecting(wx.Frame):
                                 #显示
                                 cv2.putText(im_rd, "Yawning!", (10, 60),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                                 self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"Yawn\n")
-                            # 重置嘴帧计数器打哈欠
+
                             self.mCOUNTER = 0
 
                         cv2.putText(im_rd, "COUNTER: {}".format(self.mCOUNTER), (150, 60),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2) 
@@ -343,19 +340,19 @@ class Fatigue_detecting(wx.Frame):
                     眨眼
                     """
                     if self.blink_checkBox2.GetValue()== True:
-                        # 提取左眼和右眼坐标
+
                         leftEye = shape[lStart:lEnd]
                         rightEye = shape[rStart:rEnd]
-                        # 构造函数计算左右眼的EAR值，使用平均值作为最终的EAR
+
                         leftEAR = self.eye_aspect_ratio(leftEye)
                         rightEAR = self.eye_aspect_ratio(rightEye)
                         ear = (leftEAR + rightEAR) / 2.0
                         leftEyeHull = cv2.convexHull(leftEye)
                         rightEyeHull = cv2.convexHull(rightEye)
-                        # 使用cv2.convexHull获得凸包位置，使用drawContours画出轮廓位置进行画图操作
+
                         cv2.drawContours(im_rd, [leftEyeHull], -1, (0, 255, 0), 1)
                         cv2.drawContours(im_rd, [rightEyeHull], -1, (0, 255, 0), 1)
-                        # 循环，满足条件的，眨眼次数+1
+
                         if ear < self.EYE_AR_THRESH:# 眼睛长宽比：0.2
                             self.COUNTER += 1
 
@@ -364,9 +361,9 @@ class Fatigue_detecting(wx.Frame):
                             if self.COUNTER >= self.EYE_AR_CONSEC_FRAMES:# 阈值：3
                                 self.TOTAL += 1
                                 self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"Blink\n")
-                            # 重置眼帧计数器
+
                             self.COUNTER = 0
-                        # 第十四步：进行画图操作，同时使用cv2.putText将眨眼次数进行显示
+
 
                         cv2.putText(im_rd, "Faces: {}".format(len(faces)), (10, 30),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)     
                         cv2.putText(im_rd, "COUNTER: {}".format(self.COUNTER), (150, 30),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2) 
@@ -382,14 +379,14 @@ class Fatigue_detecting(wx.Frame):
                         # 获取头部姿态
                         reprojectdst, euler_angle = self.get_head_pose(shape) 
                         har = euler_angle[0, 0]# 取pitch旋转角度
-                        if har > self.HAR_THRESH:# 点头阈值0.3
+                        if har > self.HAR_THRESH:
                             self.hCOUNTER += 1
                         else:
                             # 如果连续3次都小于阈值，则表示瞌睡点头一次
                             if self.hCOUNTER >= self.NOD_AR_CONSEC_FRAMES:# 阈值：3
                                 self.hTOTAL += 1
                                 self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"Nod\n")
-                            # 重置点头帧计数器
+
                             self.hCOUNTER = 0
                         # 绘制正方体12轴(视频流尺寸过大时，reprojectdst会超出int范围，建议压缩检测视频尺寸)
                         for start, end in self.line_pairs:
@@ -412,7 +409,7 @@ class Fatigue_detecting(wx.Frame):
                     self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"员工脱岗!!!\n")
                     self.oCOUNTER = 0
                 
-            # 确定疲劳提示:眨眼50次，打哈欠15次，瞌睡点头30次
+           
             if self.TOTAL >= 20 or self.mTOTAL>=5 or self.hTOTAL>=10:
                 cv2.putText(im_rd, "SLEEP!!!", (100, 200),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                 #self.m_textCtrl3.AppendText(u"疲劳")
