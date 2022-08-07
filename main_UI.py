@@ -409,7 +409,7 @@ class Fatigue_detecting(wx.Frame):
                     self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"员工脱岗!!!\n")
                     self.oCOUNTER = 0
                 
-           
+
             if self.TOTAL >= 20 or self.mTOTAL>=5 or self.hTOTAL>=10:
                 cv2.putText(im_rd, "SLEEP!!!", (100, 200),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                 #self.m_textCtrl3.AppendText(u"疲劳")
