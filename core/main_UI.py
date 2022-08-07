@@ -18,9 +18,6 @@ import datetime,time
 import math
 import os
 
-###########################################################################
-## Class Fatigue_detecting
-###########################################################################
 
 COVER = 'images/camera.png'
 
@@ -127,7 +124,7 @@ class Fatigue_detecting(wx.Frame):
 
         self.bmp = wx.StaticBitmap(self.m_animCtrl1, -1, wx.Bitmap(self.image_cover))
 
-        # 设置窗口标题的图标
+
         self.icon = wx.Icon('./images/123.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)
 
@@ -166,7 +163,7 @@ class Fatigue_detecting(wx.Frame):
         self.oCOUNTER = 0
 
         """姿态"""
-        # 世界坐标系(UVW)：填写3D参考点，该模型参考http://aifi.isr.uc.pt/Downloads/OpenGL/glAnthropometric3DModel.cpp
+        # 世界坐标系(UVW)
         self.object_pts = np.float32([[6.825897, 6.760612, 4.402142],  #33左眉左上角
                                  [1.330353, 7.122144, 6.903745],  #29左眉右角
                                  [-1.330353, 7.122144, 6.903745], #34右眉左角
@@ -224,9 +221,9 @@ class Fatigue_detecting(wx.Frame):
         reprojectdst = tuple(map(tuple, reprojectdst.reshape(8, 2)))# 以8行2列显示
 
         # 计算欧拉角calc euler angle
-        # 参考https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html#decomposeprojectionmatrix
-        rotation_mat, _ = cv2.Rodrigues(rotation_vec)#罗德里格斯公式（将旋转矩阵转换为旋转向量）
-        pose_mat = cv2.hconcat((rotation_mat, translation_vec))# 水平拼接，vconcat垂直拼接
+
+        rotation_mat, _ = cv2.Rodrigues(rotation_vec)
+        pose_mat = cv2.hconcat((rotation_mat, translation_vec))
         # decomposeProjectionMatrix将投影矩阵分解为旋转矩阵和相机矩阵
         _, _, _, _, _, _, euler_angle = cv2.decomposeProjectionMatrix(pose_mat)
 
@@ -237,21 +234,21 @@ class Fatigue_detecting(wx.Frame):
         yaw = math.degrees(math.asin(math.sin(yaw)))
         #print('pitch:{}, yaw:{}, roll:{}'.format(pitch, yaw, roll))
 
-        return reprojectdst, euler_angle# 投影误差，欧拉角
+        return reprojectdst, euler_angle
     
     def eye_aspect_ratio(self,eye):
-        # 垂直眼标志（X，Y）坐标
+
         A = dist.euclidean(eye[1], eye[5])
         B = dist.euclidean(eye[2], eye[4])
         # 计算水平之间的欧几里得距离
 
         C = dist.euclidean(eye[0], eye[3])
-        # 眼睛长宽比的计算
+
         ear = (A + B) / (2.0 * C)
 
         return ear
 
-    def mouth_aspect_ratio(self,mouth):# 嘴部
+    def mouth_aspect_ratio(self,mouth):
         A = np.linalg.norm(mouth[2] - mouth[9])  # 51, 59
         B = np.linalg.norm(mouth[4] - mouth[7])  # 53, 57
         C = np.linalg.norm(mouth[0] - mouth[6])  # 49, 55
@@ -262,11 +259,11 @@ class Fatigue_detecting(wx.Frame):
     def _learning_face(self,event):
 
         self.detector = dlib.get_frontal_face_detector()
-        # dlib的68点模型，使用作者训练好的特征预测器
+
         #self.predictor = dlib.shape_predictor("model/shape_predictor_68_face_landmarks.dat")
         self.predictor = dlib.shape_predictor("F:/testdemo/test/fatigue_detecting-master/shape_predictor_68_face_landmarks.dat")
         self.m_textCtrl3.AppendText(u"Load model successfully!!\n")
-        # 分别获取左右眼面部标志的索引
+
         (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
         (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
         (mStart, mEnd) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
@@ -274,14 +271,14 @@ class Fatigue_detecting(wx.Frame):
 
         self.cap = cv2.VideoCapture(self.VIDEO_STREAM)
         
-        if self.cap.isOpened()==True:#  返回true/false 检查初始化是否成功
+        if self.cap.isOpened()==True:
             self.CAMERA_STYLE = True
             self.m_textCtrl3.AppendText(u"Camera On!!!\n")
         else:
             self.m_textCtrl3.AppendText(u"摄像头打开失败!!!\n")
-            #显示封面图
+
             self.bmp.SetBitmap(wx.Bitmap(self.image_cover))
-        # 成功打开视频，循环读取视频流
+
         while(self.cap.isOpened()):
             # cap.read()
             # 返回两个值：
@@ -291,20 +288,20 @@ class Fatigue_detecting(wx.Frame):
 
             img_gray = cv2.cvtColor(im_rd, cv2.COLOR_RGB2GRAY)
             
-            # 使用人脸检测器检测每一帧图像中的人脸。并返回人脸数faces
+
             faces = self.detector(img_gray, 0)
 
             if(len(faces)!=0):
                 # enumerate方法同时返回数据对象的索引和数据，k为索引，d为faces中的对象
                 for k, d in enumerate(faces):
-                    # 用红色矩形框出人脸
+
                     cv2.rectangle(im_rd, (d.left(), d.top()), (d.right(), d.bottom()), (0, 255, 0),1)
-                    # 使用预测器得到68点数据的坐标
+
                     shape = self.predictor(im_rd, d)
-                    # 圆圈显示每个特征点
+
                     for i in range(68):
                         cv2.circle(im_rd, (shape.part(i).x, shape.part(i).y), 1, (0, 0, 255), -1, 8)
-                    # 将脸部特征信息转换为数组array的格式
+
                     shape = face_utils.shape_to_np(shape)
                     """
                     打哈欠
@@ -314,7 +311,7 @@ class Fatigue_detecting(wx.Frame):
                         mouth = shape[mStart:mEnd]        
 
                         mar = self.mouth_aspect_ratio(mouth)
-                        # 使用cv2.convexHull获得凸包位置，使用drawContours画出轮廓位置进行画图操作
+
                         mouthHull = cv2.convexHull(mouth)
                         cv2.drawContours(im_rd, [mouthHull], -1, (0, 255, 0), 1)
 
@@ -357,7 +354,7 @@ class Fatigue_detecting(wx.Frame):
                             self.COUNTER += 1
 
                         else:
-                            # 如果连续3次都小于阈值，则表示进行了一次眨眼活动
+
                             if self.COUNTER >= self.EYE_AR_CONSEC_FRAMES:# 阈值：3
                                 self.TOTAL += 1
                                 self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"Blink\n")
@@ -378,11 +375,11 @@ class Fatigue_detecting(wx.Frame):
                     if self.nod_checkBox7.GetValue()== True:
                         # 获取头部姿态
                         reprojectdst, euler_angle = self.get_head_pose(shape) 
-                        har = euler_angle[0, 0]# 取pitch旋转角度
+                        har = euler_angle[0, 0]
                         if har > self.HAR_THRESH:
                             self.hCOUNTER += 1
                         else:
-                            # 如果连续3次都小于阈值，则表示瞌睡点头一次
+
                             if self.hCOUNTER >= self.NOD_AR_CONSEC_FRAMES:# 阈值：3
                                 self.hTOTAL += 1
                                 self.m_textCtrl3.AppendText(time.strftime('%Y-%m-%d %H:%M ', time.localtime())+u"Nod\n")
@@ -391,7 +388,7 @@ class Fatigue_detecting(wx.Frame):
                         # 绘制正方体12轴(视频流尺寸过大时，reprojectdst会超出int范围，建议压缩检测视频尺寸)
                         for start, end in self.line_pairs:
                             cv2.line(im_rd, reprojectdst[start], reprojectdst[end], (0, 0, 255))
-                        # 显示角度结果
+
                         cv2.putText(im_rd, "X: " + "{:7.2f}".format(euler_angle[0, 0]), (10, 90), cv2.FONT_HERSHEY_SIMPLEX,0.75, (0, 255, 0), thickness=2)# GREEN
                         cv2.putText(im_rd, "Y: " + "{:7.2f}".format(euler_angle[1, 0]), (150, 90), cv2.FONT_HERSHEY_SIMPLEX,0.75, (255, 0, 0), thickness=2)# BLUE
                         cv2.putText(im_rd, "Z: " + "{:7.2f}".format(euler_angle[2, 0]), (300, 90), cv2.FONT_HERSHEY_SIMPLEX,0.75, (0, 0, 255), thickness=2)# RED    
@@ -414,24 +411,24 @@ class Fatigue_detecting(wx.Frame):
                 cv2.putText(im_rd, "SLEEP!!!", (100, 200),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                 #self.m_textCtrl3.AppendText(u"疲劳")
                 
-            # opencv中imread的图片内部是BGR排序，wxPython的StaticBitmap需要的图片是RGB排序，不转换会出现颜色变换
+
             height,width = im_rd.shape[:2]
             image1 = cv2.cvtColor(im_rd, cv2.COLOR_BGR2RGB)
             pic = wx.Bitmap.FromBuffer(width,height,image1)
-            # 显示图片在panel上：
+
             self.bmp.SetBitmap(pic)
 
         # 释放摄像头
         self.cap.release()
 
     def camera_on(self,event):
-        """使用多线程，子线程运行后台的程序，主线程更新前台的UI，这样不会互相影响"""
+
         import _thread
-        # 创建子线程，按钮调用这个方法，
+
         _thread.start_new_thread(self._learning_face, (event,))
     
     def cameraid_choice( self, event ):
-        # 摄像头编号
+
         cameraid = int(event.GetString()[-1])# 截取最后一个字符
         if cameraid == 0:
             self.m_textCtrl3.AppendText(u"准备打开本地摄像头!!!\n")
@@ -441,22 +438,22 @@ class Fatigue_detecting(wx.Frame):
         
     def vedio_on( self, event ):  
         if self.CAMERA_STYLE == True :# 释放摄像头资源
-            # 弹出关闭摄像头提示窗口
+
             dlg = wx.MessageDialog(None, u'确定要关闭摄像头？', u'操作提示', wx.YES_NO | wx.ICON_QUESTION)
             if(dlg.ShowModal() == wx.ID_YES):
-                self.cap.release()#释放摄像头
+                self.cap.release()
                 self.bmp.SetBitmap(wx.Bitmap(self.image_cover))#封面
-                dlg.Destroy()#取消弹窗
-        # 选择文件夹对话框窗口
+                dlg.Destroy()
+
         dialog = wx.FileDialog(self,u"选择视频检测",os.getcwd(),'',wildcard="(*.mp4)|*.mp4",style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
-            #如果确定了选择的文件夹，将文件夹路径写到m_textCtrl3控件
+
             self.m_textCtrl3.SetValue(u"文件路径:"+dialog.GetPath()+"\n")
             self.VIDEO_STREAM = str(dialog.GetPath())# 更新全局变量路径
             dialog.Destroy
             """使用多线程，子线程运行后台的程序，主线程更新前台的UI，这样不会互相影响"""
             import _thread
-            # 创建子线程，按钮调用这个方法，
+
             _thread.start_new_thread(self._learning_face, (event,))
     
     def AR_CONSEC_FRAMES( self, event ):
@@ -468,12 +465,12 @@ class Fatigue_detecting(wx.Frame):
         self.OUT_AR_CONSEC_FRAMES_check = int(event.GetString())
 
     def off(self,event):
-        """关闭摄像头，显示封面页"""
+
         self.cap.release()
         self.bmp.SetBitmap(wx.Bitmap(self.image_cover))
         
     def OnClose(self, evt):
-        """关闭窗口事件函数"""
+
         dlg = wx.MessageDialog(None, u'确定要关闭本窗口？', u'操作提示', wx.YES_NO | wx.ICON_QUESTION)
         if(dlg.ShowModal() == wx.ID_YES):
             self.Destroy()
@@ -481,11 +478,7 @@ class Fatigue_detecting(wx.Frame):
 
             
 class main_app(wx.App):
-    """
-     在OnInit() 里边申请Frame类，这样能保证一定是在app后调用，
-     这个函数是app执行完自己的__init__函数后就会执行
-    """
-    # OnInit 方法在主事件循环开始前被wxPython系统调用，是wxpython独有的
+
     def OnInit(self):
         self.frame = Fatigue_detecting(parent=None,title="Fatigue Demo")
         self.frame.Show(True)
